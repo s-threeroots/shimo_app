@@ -1,0 +1,231 @@
+{{ define "edit" }}
+<html>
+
+<head>
+    <title>明細</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 form-inline d-flex justify-content-between">
+                <label for="invoice_name">
+                    <h2 class="display-5">邸名: </h2>
+                </label>
+                <input class="form-control form-control-lg" type="text" placeholder="邸名" value="{{.ClientName}}">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-5 form-inline d-flex justify-content-between">
+                <label for="invoice_name">
+                    <h2 class="display-5">明細名: </h2>
+                </label>
+                <input class="form-control form-control-lg" type="text" placeholder="明細名" value="{{.EstimationName}}">
+            </div>
+            <div class="col-md-3"></div>
+            <div class="col-md-4 form-inline">
+                <label for="invoice_name">テンプレート:</label>
+                <select class="form-control">
+                    <option>テンプレート1</option>
+                    <option>テンプレート2</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 20%" scope="col">項目</th>
+                        <th style="width: 35%" scope="col">摘要</th>
+                        <th scope="col">数量</th>
+                        <th scope="col">単位</th>
+                        <th style="width: 10%" scope="col">単価</th>
+                        <th style="width: 10%" scope="col">金額</th>
+                        <th scope="col">操作</th>
+                    </tr>
+                </thead>
+                {{ range $n, $group := .Groups }}
+                <tbody class="sortDetail">
+                    <tr class="unsortable">
+                        <th rowspan="999" scope="rowgroup" class="itemRow">
+                            <input class="form-control items" type="text" placeholder="項目" value="{{ $group.Name }}">
+                        </th>
+                    </tr>
+                    {{ range $m, $item := $group.Items }}
+                    <tr class="calc">
+                        <td>
+                            <input class="form-control items" type="text" placeholder="摘要" value="{{ $item.Name }}">
+                        </td>
+                        <td><input class="form-control items amount" type="text" placeholder="数量" value="{{ $item.Amount }}"></td>
+                        <td><input class="form-control items" type="text" placeholder="単位" value="{{ $item.Unit }}"></td>
+                        <td><input class="form-control items price" type="text" placeholder="金額" value="{{ $item.UnitPrice }}"></td>
+                        <td class="subtotal">0</td>
+                        <td>
+                            <select class="form-select" name="edit" id="edit">
+                                <option value="none">操作を選択</option>
+                                <option value="save">摘要を保存</option>
+                                <option value="load">摘要を読込</option>
+                                <option value="delete">摘要を削除</option>
+                                <option value="cal">積算</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {{ end }}
+                    <tr class="addDetailRow">
+                        <td colspan="6"><button class="btn btn-outline-primary btn-sm addDetail">+</button></td>
+                    </tr>
+                </tbody>
+                {{ end }}
+                <tbody class="addItemRow">
+                    <tr>
+                        <td colspan="7"><button class="btn btn-outline-primary btn-sm" id="addItem">+</button></td>
+                    </tr>
+                </tbody>
+                <tbody class="summary">
+                    <tr class="table-secondary">
+                        <td rowspan="3">合計</td>
+                        <td>小計</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="total">0</td>
+                        <td></td>
+                    </tr>
+                    <tr class="table-secondary">
+                        <td>消費税</td>
+                        <td>10.0</td>
+                        <td>%</td>
+                        <td></td>
+                        <td class="tax">0</td>
+                        <td></td>
+                    </tr>
+                    <tr class="table-secondary font-weight-bold">
+                        <td>総計</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td class="fulltotal">0</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="text-right">
+            <button type="button" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-primary">複製して新規作成</button>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        $(function () {
+            $("table").sortable({
+                items: "tbody:not(.addItemRow,.summary)"
+            });
+            $(".sortDetail").sortable({
+                items: "tr:not(.unsortable,.itemRow,.addDetailRow)"
+            });
+
+            $(document).ready(function() {
+                $(".calc").each(function(idx, tr) {
+                    subTotal($(tr));
+                    total();
+                });
+            });
+            var detailHtml= `
+                    <tr class="calc">
+                        <td><input class="form-control items" type="text" placeholder="摘要"></td>
+                        <td><input class="form-control items amount" type="text" placeholder="数量"></td>
+                        <td><input class="form-control items" type="text" placeholder="単位"></td>
+                        <td><input class="form-control items price" type="text" placeholder="価格"></td>
+                        <td class="subtotal">0</td>
+                        <td>
+                            <select class="form-select" name="edit" id="edit">
+                                <option value="none">操作を選択</option>
+                                <option value="save">摘要を保存</option>
+                                <option value="load">摘要を読込</option>
+                                <option value="delete">摘要を削除</option>
+                                <option value="cal">積算</option>
+                            </select>
+                        </td>
+                    </tr>
+            `
+
+            var itemHtmlHead = `
+                <tbody class="sortDetail">
+                    <tr class="unsortable">
+                        <th rowspan="999" scope="rowgroup">
+                            <input class="form-control items" type="text" placeholder="項目">
+                        </th>
+                    </tr>
+            `
+
+            var itemHtmlFoot = `
+                    <tr class="addDetailRow">
+                        <td colspan="6"><button class="btn btn-outline-primary btn-sm addDetail">+</button></td>
+                    </tr>
+                </tbody>
+            `
+
+            var regExp = new RegExp(",", "g")
+
+
+            $(document).on('click', '.addDetail', function() {
+                var tbody = $(this).parents('tbody');
+                tbody.find(".addDetailRow").before(detailHtml);
+            });
+
+            $('#addItem').click(function () {
+                var html = itemHtmlHead + detailHtml + itemHtmlFoot;
+                $(".addItemRow").before(html);
+            });
+
+            $(document).on('change', '.items', function() {
+                subTotal($(this).parents('tr'));
+                total();
+            });
+
+
+            function total() {
+                var total = 0;
+
+                var table = $('table');
+                table.find('.subtotal').each(function(idx, st) {
+                    subtotal = parseInt($(st).html().replace(regExp, ""));
+                    total += subtotal;
+                });
+
+                tax = total / 10;
+                fulltotal = total + tax;
+
+
+
+                table.find('.total').text(total);
+                table.find('.tax').text(tax);
+                table.find('.fulltotal').text(fulltotal);
+
+            }
+
+            function subTotal(tr) {
+                
+                var amount = parseInt(tr.find('.amount').val().replace(regExp, ""));
+                var price = parseInt(tr.find('.price').val().replace(regExp, ""));
+
+                var subtotal = amount * price;
+
+                if (isNaN(subtotal)) {
+                    subtotal = 0;
+                }
+
+                tr.find('.subtotal').text(subtotal.toLocaleString());
+
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}
