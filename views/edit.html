@@ -15,7 +15,7 @@
                 <label for="invoice_name">
                     <h2 class="display-5">邸名: </h2>
                 </label>
-                <input class="form-control form-control-lg" type="text" placeholder="邸名" value="{{.ClientName}}">
+                <input class="form-control form-control-lg" id="client_name" type="text" placeholder="邸名" value="{{.ClientName}}">
             </div>
         </div>
         <div class="row">
@@ -23,7 +23,7 @@
                 <label for="invoice_name">
                     <h2 class="display-5">明細名: </h2>
                 </label>
-                <input class="form-control form-control-lg" type="text" placeholder="明細名" value="{{.EstimationName}}">
+                <input class="form-control form-control-lg" id="estimation_name" type="text" placeholder="明細名" value="{{.EstimationName}}">
             </div>
             <div class="col-md-3"></div>
             <div class="col-md-4 form-inline">
@@ -51,18 +51,16 @@
                 <tbody class="sortDetail">
                     <tr class="unsortable">
                         <th rowspan="999" scope="rowgroup" class="itemRow">
-                            <input class="form-control items" type="text" placeholder="項目" value="{{ $group.Name }}">
+                            <input class="form-control items group_name" type="text" placeholder="項目" value="{{ $group.Name }}">
                         </th>
                     </tr>
                     {{ range $m, $item := $group.Items }}
                     <tr class="calc">
-                        <td>
-                            <input class="form-control items" type="text" placeholder="摘要" value="{{ $item.Name }}">
-                        </td>
-                        <td><input class="form-control items amount" type="text" placeholder="数量" value="{{ $item.Amount }}"></td>
-                        <td><input class="form-control items" type="text" placeholder="単位" value="{{ $item.Unit }}"></td>
-                        <td><input class="form-control items price" type="text" placeholder="金額" value="{{ $item.UnitPrice }}"></td>
-                        <td class="subtotal">0</td>
+                        <td><input class="form-control items item_name"      type="text" placeholder="摘要" value="{{ $item.Name }}">     </td>
+                        <td><input class="form-control items amount"         type="text" placeholder="数量" value="{{ $item.Amount }}">   </td>
+                        <td><input class="form-control items unit"           type="text" placeholder="単位" value="{{ $item.Unit }}">     </td>
+                        <td><input class="form-control items unit_price"     type="text" placeholder="金額" value="{{ $item.UnitPrice }}"></td>
+                        <td class="price">0</td>
                         <td>
                             <select class="form-select" name="edit" id="edit">
                                 <option value="none">操作を選択</option>
@@ -91,7 +89,7 @@
                         <td></td>
                         <td></td>
                         <td></td>
-                        <td class="total">0</td>
+                        <td class="subtotal">0</td>
                         <td></td>
                     </tr>
                     <tr class="table-secondary">
@@ -107,15 +105,15 @@
                         <td></td>
                         <td></td>
                         <td></td>
-                        <td class="fulltotal">0</td>
+                        <td class="total">0</td>
                         <td></td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <div class="text-right">
-            <button type="button" class="btn btn-primary">保存</button>
-            <button type="button" class="btn btn-primary">複製して新規作成</button>
+            <button type="button" class="btn btn-primary" id="save">保存</button>
+            <button type="button" class="btn btn-primary" id="deplicate">複製して新規作成</button>
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -131,17 +129,17 @@
 
             $(document).ready(function() {
                 $(".calc").each(function(idx, tr) {
-                    subTotal($(tr));
+                    calcPrice($(tr));
                     total();
                 });
             });
             var detailHtml= `
                     <tr class="calc">
-                        <td><input class="form-control items" type="text" placeholder="摘要"></td>
-                        <td><input class="form-control items amount" type="text" placeholder="数量"></td>
-                        <td><input class="form-control items" type="text" placeholder="単位"></td>
-                        <td><input class="form-control items price" type="text" placeholder="価格"></td>
-                        <td class="subtotal">0</td>
+                        <td><input class="form-control items item_name"      type="text" placeholder="摘要"></td>
+                        <td><input class="form-control items amount"         type="text" placeholder="数量"></td>
+                        <td><input class="form-control items unit"           type="text" placeholder="単位"></td>
+                        <td><input class="form-control items unit_price"     type="text" placeholder="金額"></td>
+                        <td class="price">0</td>
                         <td>
                             <select class="form-select" name="edit" id="edit">
                                 <option value="none">操作を選択</option>
@@ -158,7 +156,7 @@
                 <tbody class="sortDetail">
                     <tr class="unsortable">
                         <th rowspan="999" scope="rowgroup">
-                            <input class="form-control items" type="text" placeholder="項目">
+                            <input class="form-control items group_name" type="text" placeholder="項目">
                         </th>
                     </tr>
             `
@@ -184,43 +182,133 @@
             });
 
             $(document).on('change', '.items', function() {
-                subTotal($(this).parents('tr'));
+                calcPrice($(this).parents('tr'));
                 total();
             });
 
+            $('#save').click(function () {
 
-            function total() {
-                var total = 0;
+                // 多重送信を防ぐため通信完了までボタンをdisableにする
+                // TODO: 多分入力項目は全部非活性にしたほうがいい。
+                var button = $(this);
+                button.attr("disabled", true);
 
-                var table = $('table');
-                table.find('.subtotal').each(function(idx, st) {
-                    subtotal = parseInt($(st).html().replace(regExp, ""));
-                    total += subtotal;
+                var groups = []
+
+                var table = $('table')
+
+                table.find('.sortDetail').each(function(idx, tbody){
+
+                    var group = {};
+
+                    group.name = $(tbody).find('.group_name').val();
+                    
+                    var items = [];
+
+                    $(tbody).find('.calc').each(function(idx, tr){
+                        
+                        item_name = $(tr).find('.item_name').val();
+                        amount = parseInt($(tr).find('.amount').val());
+                        unit = $(tr).find('.unit').val();
+                        unit_price = parseInt($(tr).find('.unit_price').val());
+
+                        var item = {
+                            name: item_name,
+                            amount: amount,
+                            unit: unit,
+                            unit_price: unit_price,
+                            price: unit_price * amount
+                        }
+                        items.push(item);
+
+                    });
+
+                    group.items = items;
+                    groups.push(group);
+
                 });
 
-                tax = total / 10;
-                fulltotal = total + tax;
+                var client_name = $("#client_name").val();
+                var estimation_name = $("#estimatin_name").val();
+                var subtotal = table.find('.subtotal').text();
+                var tax = table.find('.tax').text();
+                var total = table.find('.total').text();
+
+                var estimation = {
+                    client_name: client_name, 
+                    estimation_name: estimation_name,
+                    groups: groups,
+                    sub_total: subtotal,
+                    tax: tax,
+                    total: total
+                }
+
+                alert(JSON.stringify(estimation));
+
+                $.ajax({
+                    type: "post",
+                    url: "/edit/{{ .ID }}",        // POST送信先のURL
+                    data: JSON.stringify(estimation),  // JSONデータ本体
+                    contentType: 'application/json', // リクエストの Content-Type
+                    dataType: "json",           // レスポンスをJSONとしてパースする
+                    success: function (json_data) {   // 200 OK時
+                        // JSON Arrayの先頭が成功フラグ、失敗の場合2番目がエラーメッセージ
+                        if (!json_data[0]) {    // サーバが失敗を返した場合
+                            alert("Transaction error. " + json_data[1]);
+                            return;
+                        }
+                        // 成功時処理
+                        location.reload();
+                    },
+                    error: function () {         // HTTPエラー時
+                        alert("Server Error. Please try again later.");
+                    },
+                    complete: function () {      // 成功・失敗に関わらず通信が終了した際の処理
+                        button.attr("disabled", false);  // ボタンを再び enableにする
+                    }
+
+                })
+            });
+
+            function total() {
+                var subtotal = 0;
+
+                var table = $('table');
+                table.find('.price').each(function(idx, st) {
+                    price = parseInt($(st).html().replace(regExp, ""));
+                    subtotal += price;
+                });
+
+                var tax = subtotal / 10;
+                var total = subtotal + tax;
 
 
 
-                table.find('.total').text(total);
+                table.find('.subtotal').text(subtotal);
                 table.find('.tax').text(tax);
-                table.find('.fulltotal').text(fulltotal);
+                table.find('.total').text(total);
 
             }
 
-            function subTotal(tr) {
+            function calcPrice(tr) {
                 
-                var amount = parseInt(tr.find('.amount').val().replace(regExp, ""));
-                var price = parseInt(tr.find('.price').val().replace(regExp, ""));
+                var amountStr = tr.find('.amount').val();
+                var unitPriceStr = tr.find('.unit_price').val();
 
-                var subtotal = amount * price;
+                if (amountStr !== undefined && amountStr != "" && unitPriceStr !== undefined && unitPriceStr != "") {
 
-                if (isNaN(subtotal)) {
-                    subtotal = 0;
+                    var amount = parseInt(amountStr.replace(regExp, ""));
+                    var unit_price = parseInt(unitPriceStr.replace(regExp, ""));
+
+                    var price = amount * unit_price;
+
+                    if (isNaN(price)) {
+                        price = 0;
+                    }
+
+                    tr.find('.price').text(price.toLocaleString());
+
                 }
-
-                tr.find('.subtotal').text(subtotal.toLocaleString());
 
             }
         });

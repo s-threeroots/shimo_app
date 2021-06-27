@@ -28,6 +28,7 @@ type Item struct {
 	Amount    int
 	Unit      string
 	UnitPrice int
+	Price     int
 }
 
 func (e Estimation) Init() {
@@ -44,6 +45,7 @@ func (e Estimation) Init() {
 						Amount:    0,
 						Unit:      "",
 						UnitPrice: 0,
+						Price:     0,
 					},
 				},
 			},
