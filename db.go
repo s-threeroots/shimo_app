@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func OneEstimationByID(id int) (*Estimation, error) {
+func OneEstimationByID(id uint) (*Estimation, error) {
 
 	est := new(Estimation)
 
@@ -30,11 +30,24 @@ func SaveEstimation(est *Estimation) error {
 		return err
 	}
 
-	err = db.Save(est).Error
+	err = db.Session(&gorm.Session{FullSaveAssociations: true}).Save(est).Error
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func DeleteObject(obj interface{}) error {
+	db, err := open()
+	if err != nil {
+		return err
+	}
+
+	err = db.Delete(obj).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

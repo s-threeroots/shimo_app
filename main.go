@@ -30,8 +30,12 @@ func main() {
 
 	Migrate()
 
-	e.GET("/edit/:id", func(c echo.Context) error {
-		return EditHandler(c)
-	})
+	e.GET("/estimation/new", CreatePage)
+	e.GET("/estimation/:id/edit", EditPage)
+	e.GET("/api/estimation/:id", GetEstimation)
+	e.POST("/api/estimation/:id", SaveHandler)
+	e.POST("/api/estimation/:id/duplicate", DuplicateHandler)
+	e.DELETE("/api/estimation/:id/group", DeleteGroupHandler)
+	e.DELETE("/api/estimation/:id/item", DeleteItemHandler)
 	e.Logger.Fatal(e.Start(":8081"))
 }
