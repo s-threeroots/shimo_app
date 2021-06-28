@@ -48,7 +48,8 @@ insert into items
 	name,
 	amount,
 	unit,
-	unit_price
+	unit_price,
+	price
 )
 values (
 	current_timestamp,
@@ -58,7 +59,8 @@ values (
 	'name1',
 	10,
 	'unit1',
-	200
+	200,
+	2000
 )
 
 insert into items
@@ -70,7 +72,8 @@ insert into items
 	name,
 	amount,
 	unit,
-	unit_price
+	unit_price,
+	price
 )
 values (
 	current_timestamp,
@@ -80,5 +83,6 @@ values (
 	'name2',
 	10,
 	'unit2',
-	100
+	100,
+	1000
 )
