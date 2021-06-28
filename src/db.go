@@ -23,7 +23,12 @@ func OneEstimationByID(id uint) (*Estimation, error) {
 	}
 	defer db.Close()
 
-	err = gormDB.Preload("Groups").Preload("Groups.Items").First(&est, id).Error
+	err = gormDB.
+		Preload("Groups", func(db *gorm.DB) *gorm.DB {
+			return db.Order("groups.order ASC")
+		}).Preload("Groups.Items", func(db *gorm.DB) *gorm.DB {
+		return db.Order("items.order ASC")
+	}).First(&est, id).Error
 	if err != nil {
 		return est, err
 	}

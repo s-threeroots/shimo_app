@@ -231,9 +231,13 @@
 
                     var tr = $(this).parents('tr');
 
-                    if (tr.find('.item_id').val() != "0" && tr.find('.item_id').val() != undefined) {
+                    var item_id = tr.find('.item_id').val();
 
-                        var item = bindItem(tr)
+                    if (item_id != "0" && item_id != undefined) {
+
+                        var item = {
+                            id : parseInt(item_id)
+                        }
 
                         $.ajax({
                             type: 'delete',
@@ -404,7 +408,7 @@
 
                     $(tbody).find('.item_row').each(function(idx, tr){
                         
-                        var item = bindItem(tr)
+                        var item = bindItem(idx, tr)
                         items.push(item);
 
                     });
@@ -415,7 +419,8 @@
                     var group = {
                         id: group_id,
                         name: group_name,
-                        items: items
+                        items: items,
+                        order: idx + 1
                     }
 
                     groups.push(group);
@@ -444,7 +449,7 @@
             }
 
 
-            function bindItem(tr) {
+            function bindItem(idx, tr) {
 
                 var item_id = parseInt($(tr).find('.item_id').val());
                 var parent_group_id = parseInt($(tr).find('.parent_group_id').val());
@@ -460,7 +465,8 @@
                     amount: amount,
                     unit: unit,
                     unit_price: unit_price,
-                    price: unit_price * amount
+                    price: unit_price * amount,
+                    order: idx + 1
                 }
 
                 return item

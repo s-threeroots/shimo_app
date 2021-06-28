@@ -21,6 +21,7 @@ type Group struct {
 	EstimationID uint   `json:"estimation_id"`
 	Name         string `json:"name"`
 	Items        []Item `json:"items"`
+	Order        int    `json:"order"`
 }
 
 type Item struct {
@@ -32,6 +33,7 @@ type Item struct {
 	Unit      string `json:"unit"`
 	UnitPrice int    `json:"unit_price"`
 	Price     int    `json:"price"`
+	Order     int    `json:"order"`
 }
 
 func (e Estimation) Init() {
