@@ -118,6 +118,7 @@
                         <th rowspan="999" scope="rowgroup">
                             <input class="group_id" type="hidden" value="0">
                             <input class="form-control items group_name" type="text" placeholder="項目">
+                            <button class="btn btn-outline-danger btn-sm remove_group">-</button>
                         </th>
                     </tr>
             `
@@ -160,7 +161,30 @@
 
             // add group 
             $('#addGroup').click(addGroup);
-            
+
+            // remove group
+             $(document).on('click', '.remove_group', function() {
+
+                var tbody = $(this).parents('tbody');
+
+                tbody.find('.item_row').each(function(idx, tr){
+                    
+                    var item_id = $(tr).find('.item_id').val();
+                    var error = deleteItem(item_id);
+                    if (error) {
+                        return
+                    }
+                });
+                var group_id = tbody.find('.group_id').val();
+
+                var error = deleteGroup(group_id);
+                if (error) {
+                    return
+                }
+
+                tbody.remove();
+            });
+
             // save
             $('#save').click(function () {
 
@@ -233,60 +257,24 @@
 
                     var item_id = tr.find('.item_id').val();
 
-                    if (item_id != "0" && item_id != undefined) {
+                    var error = deleteItem(item_id)
 
-                        var item = {
-                            id : parseInt(item_id)
-                        }
-
-                        $.ajax({
-                            type: 'delete',
-                            url: apiEntry + estimation_id + "/item",
-                            data: JSON.stringify(item),
-                            contentType: 'application/json',
-                            dataType: 'text',
-                            scriptCharset: 'utf-8',
-                            success: function () {
-                                alert("item deleted")
-                            },
-                            error: function () {
-                                alert("Server Error. Please try again later.");
-                                return;
-                            },
-                        });
+                    if (error) {
+                        return
                     }
-
 
                     var tbody = $(this).parents('tbody')
 
                     if (tbody.find('tr').length < 4) {
 
                         var group_id = tbody.find('.group_id').val();
+                        error = deleteGroup(group_id);
 
-                        if (group_id != "0" && group_id != undefined) {
-
-                            var group = {
-                                id: parseInt(group_id) 
-                            }
-
-                            $.ajax({
-                                type: 'delete',
-                                url: apiEntry + estimation_id + "/group",
-                                data: JSON.stringify(group),
-                                contentType: 'application/json',
-                                dataType: 'text',
-                                scriptCharset: 'utf-8',
-                                success: function () {
-                                    alert("group deleted")
-                                },
-                                error: function () {
-                                    alert("Server Error. Please try again later.");
-                                    return;
-                                },
-                            });
+                        if (error) {
+                            return
                         }
 
-                        tbody.remove()
+                        tbody.remove();
                     }
                     tr.remove();
                 }
@@ -492,6 +480,60 @@
 
                 }
 
+            }
+
+            function deleteItem(item_id) {
+
+                    if (item_id != "0" && item_id != undefined) {
+
+                        var item = {
+                            id : parseInt(item_id)
+                        }
+
+                        $.ajax({
+                            type: 'delete',
+                            url: apiEntry + estimation_id + "/item",
+                            data: JSON.stringify(item),
+                            contentType: 'application/json',
+                            dataType: 'text',
+                            scriptCharset: 'utf-8',
+                            success: function () {
+                                alert("item deleted")
+                            },
+                            error: function () {
+                                alert("Server Error. Please try again later.");
+                                return true;
+                            },
+                        });
+                    }
+                    return false;
+            }
+
+            function deleteGroup(group_id) {
+
+                if (group_id != "0" && group_id != undefined) {
+
+                    var group = {
+                        id: parseInt(group_id)
+                    }
+
+                    $.ajax({
+                        type: 'delete',
+                        url: apiEntry + estimation_id + "/group",
+                        data: JSON.stringify(group),
+                        contentType: 'application/json',
+                        dataType: 'text',
+                        scriptCharset: 'utf-8',
+                        success: function () {
+                            alert("group deleted")
+                        },
+                        error: function () {
+                            alert("Server Error. Please try again later.");
+                            return true;
+                        },
+                    });
+                }
+                return false;
             }
 
         });
