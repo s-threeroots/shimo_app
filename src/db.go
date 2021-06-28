@@ -1,8 +1,6 @@
 package main
 
 import (
-	"database/sql"
-	"log"
 	"os"
 
 	"github.com/lib/pq"
@@ -57,19 +55,10 @@ func DeleteObject(obj interface{}) error {
 
 func open() (*gorm.DB, error) {
 
-	port := os.Getenv("PORT")
-
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
-
 	dsn := os.Getenv("DATABASE_URL")
 	connection, err := pq.ParseURL(dsn)
 	connection += " sslmode=require"
-	sqlDB, err := sql.Open("postgres", connection)
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		Conn: sqlDB,
-	}), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
 
 	if err != nil {
 		return nil, err
