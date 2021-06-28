@@ -12,12 +12,18 @@ func OneEstimationByID(id uint) (*Estimation, error) {
 
 	est := new(Estimation)
 
-	db, err := open()
+	gormDB, err := open()
 	if err != nil {
 		return est, err
 	}
 
-	err = db.Preload("Groups").Preload("Groups.Items").First(&est, id).Error
+	db, err := gormDB.DB()
+	if err != nil {
+		return est, err
+	}
+	defer db.Close()
+
+	err = gormDB.Preload("Groups").Preload("Groups.Items").First(&est, id).Error
 	if err != nil {
 		return est, err
 	}
@@ -27,12 +33,18 @@ func OneEstimationByID(id uint) (*Estimation, error) {
 
 func SaveEstimation(est *Estimation) error {
 
-	db, err := open()
+	gormDB, err := open()
 	if err != nil {
 		return err
 	}
 
-	err = db.Session(&gorm.Session{FullSaveAssociations: true}).Save(est).Error
+	db, err := gormDB.DB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = gormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(est).Error
 	if err != nil {
 		return err
 	}
@@ -41,12 +53,18 @@ func SaveEstimation(est *Estimation) error {
 }
 
 func DeleteObject(obj interface{}) error {
-	db, err := open()
+	gormDB, err := open()
 	if err != nil {
 		return err
 	}
 
-	err = db.Delete(obj).Error
+	db, err := gormDB.DB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = gormDB.Delete(obj).Error
 	if err != nil {
 		return err
 	}
@@ -58,19 +76,26 @@ func open() (*gorm.DB, error) {
 	dsn := os.Getenv("DATABASE_URL")
 	connection, err := pq.ParseURL(dsn)
 	connection += " sslmode=require"
-	db, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
-
+	gormDB, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+
+	return gormDB, nil
 }
 
 func Migrate() error {
-	db, err := open()
+	gormDB, err := open()
 	if err != nil {
 		return err
 	}
-	db.AutoMigrate(Estimation{}, Group{}, Item{})
+
+	db, err := gormDB.DB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	gormDB.AutoMigrate(Estimation{}, Group{}, Item{})
 	return nil
 }
