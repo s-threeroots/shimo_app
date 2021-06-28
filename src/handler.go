@@ -67,7 +67,7 @@ func DuplicateHandler(c echo.Context) error {
 		return err
 	}
 
-	cp := est.DeepCopy()
+	cp := est
 
 	cp.ID = 0
 	for i := range cp.Groups {
@@ -79,7 +79,7 @@ func DuplicateHandler(c echo.Context) error {
 		cp.Groups[i].EstimationID = 0
 	}
 
-	err = SaveEstimation(&cp)
+	err = SaveEstimation(cp)
 	if err != nil {
 		return err
 	}

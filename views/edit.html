@@ -131,14 +131,6 @@
 
             var apiEntry = "/api/estimation/";
 
-            // sortable
-            $("table").sortable({
-                items: "tbody:not(.addGroupRow,.summary)"
-            });
-            $(".group_tbody").sortable({
-                items: "tr:not(.unsortable,.itemRow,.addItemRow)"
-            });
-
             // on load
             $(document).ready(function() {
 
@@ -321,6 +313,15 @@
             function addGroup() {
                 var html = groupHtmlHead + itemHtml + groupHtmlFoot;
                 $(".addGroupRow").before(html);
+
+                // sortable
+                $("table").sortable({
+                    items: ".group_tbody"
+                });
+
+                $(".group_tbody").sortable({
+                    items: ".item_row"
+                });
             }
 
             function addItem(tbody) {
@@ -342,6 +343,9 @@
                 $(".item_row").each(function (idx, tr) {
                     calcPrice($(tr));
                     total();
+
+
+
                 });
 
             }

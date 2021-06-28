@@ -55,20 +55,6 @@ func (e Estimation) Init() {
 		},
 	}
 }
-func (o Estimation) DeepCopy() Estimation {
-	var cp Estimation = o
-	if o.Groups != nil {
-		cp.Groups = make([]Group, len(o.Groups))
-		copy(cp.Groups, o.Groups)
-		for i2 := range o.Groups {
-			if o.Groups[i2].Items != nil {
-				cp.Groups[i2].Items = make([]Item, len(o.Groups[i2].Items))
-				copy(cp.Groups[i2].Items, o.Groups[i2].Items)
-			}
-		}
-	}
-	return cp
-}
 
 type RedirectResponse struct {
 	URL string `json:"url"`
