@@ -3,6 +3,8 @@ package main
 import (
 	"html/template"
 	"io"
+	"log"
+	"os"
 
 	"github.com/labstack/echo"
 )
@@ -16,6 +18,12 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 }
 
 func main() {
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
 
 	funcMap := template.FuncMap{}
 
@@ -37,5 +45,5 @@ func main() {
 	e.POST("/api/estimation/:id/duplicate", DuplicateHandler)
 	e.DELETE("/api/estimation/:id/group", DeleteGroupHandler)
 	e.DELETE("/api/estimation/:id/item", DeleteItemHandler)
-	e.Logger.Fatal(e.Start(":8081"))
+	e.Logger.Fatal(e.Start(":" + port))
 }
