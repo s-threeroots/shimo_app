@@ -1,9 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"log"
+	"os"
+
+	"github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func OneEstimationByID(id uint) (*Estimation, error) {
@@ -52,10 +56,21 @@ func DeleteObject(obj interface{}) error {
 }
 
 func open() (*gorm.DB, error) {
-	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
+	dsn := os.Getenv("DATABASE_URL")
+	connection, err := pq.ParseURL(dsn)
+	connection += " sslmode=require"
+	sqlDB, err := sql.Open("postgres", connection)
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		Conn: sqlDB,
+	}), &gorm.Config{})
+
 	if err != nil {
 		return nil, err
 	}
