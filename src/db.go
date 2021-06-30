@@ -6,6 +6,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func OneEstimationByID(id uint) (*Estimation, error) {
@@ -81,7 +82,9 @@ func open() (*gorm.DB, error) {
 	dsn := os.Getenv("DATABASE_URL")
 	connection, err := pq.ParseURL(dsn)
 	connection += " sslmode=require"
-	gormDB, err := gorm.Open(postgres.Open(connection), &gorm.Config{})
+	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -54,10 +54,31 @@ func CreatePage(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/estimation/%d/edit", id))
 }
 
+func Print(c echo.Context) error {
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return err
+	}
+
+	est, err := OneEstimationByID(uint(id))
+	if err != nil {
+		return err
+	}
+
+	filePath, err := ExportEstimation(est)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, &RedirectResponse{
+		URL: "/" + filePath,
+	})
+}
+
 func DuplicateHandler(c echo.Context) error {
 
 	est := new(Estimation)
-
 	if err := c.Bind(est); err != nil {
 		return err
 	}
@@ -69,6 +90,7 @@ func DuplicateHandler(c echo.Context) error {
 
 	cp := est
 
+	// set all id to 0 for insert with gorm
 	cp.ID = 0
 	for i := range cp.Groups {
 		for j := range cp.Groups[i].Items {
@@ -108,12 +130,13 @@ func SaveHandler(c echo.Context) error {
 func DeleteItemHandler(c echo.Context) error {
 
 	item := new(Item)
-
-	if err := c.Bind(item); err != nil {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
 		return err
 	}
+	item.ID = uint(id)
 
-	err := DeleteObject(item)
+	err = DeleteObject(item)
 	if err != nil {
 		return err
 	}
@@ -124,12 +147,13 @@ func DeleteItemHandler(c echo.Context) error {
 func DeleteGroupHandler(c echo.Context) error {
 
 	group := new(Group)
-
-	if err := c.Bind(group); err != nil {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
 		return err
 	}
+	group.ID = uint(id)
 
-	err := DeleteObject(group)
+	err = DeleteObject(group)
 	if err != nil {
 		return err
 	}

@@ -4,9 +4,11 @@ module shimo_app
 go 1.16
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.4.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20180613141037-e580b900e9f5 // indirect
 	github.com/globusdigital/deep-copy v0.5.4 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.2.0 // indirect
+	github.com/knieriem/odf v0.1.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/lib/pq v1.10.2 // indirect

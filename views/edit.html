@@ -85,14 +85,15 @@
         <div class="text-right">
             <button type="button" class="btn btn-primary" id="save">保存</button>
             <button type="button" class="btn btn-primary" id="duplicate">複製して新規作成</button>
+            <button type="button" class="btn btn-primary" id="print">帳票を出力する</button>
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script>
-        $(function () {
+            $(function () {
 
-            var itemHtml= `
+                var itemHtml = `
                     <tr class="item_row">
                         <input class="item_id" type="hidden" value="0">
                         <td><input class="form-control items item_name"      type="text" placeholder="摘要"></td>
@@ -112,7 +113,7 @@
                     </tr>
             `
 
-            var groupHtmlHead = `
+                var groupHtmlHead = `
                 <tbody class="group_tbody">
                     <tr class="unsortable">
                         <th rowspan="999" scope="rowgroup">
@@ -123,287 +124,331 @@
                     </tr>
             `
 
-            var groupHtmlFoot = `
+                var groupHtmlFoot = `
                     <tr class="addItemRow">
                         <td colspan="6"><button class="btn btn-outline-primary btn-sm addItem">+</button>　摘要を追加</td>
                     </tr>
                 </tbody>
             `
 
-            var apiEntry = "/api/estimation/";
+                var apiEntry = "/api/estimation/";
 
-            // on load
-            $(document).ready(function() {
+                // on load
+                $(document).ready(function () {
 
-                var estimation_id = location.pathname.split("/")[2];
-                $.ajax({
-                    type: 'get',
-                    url: apiEntry + estimation_id,
-                    dataType: 'json',
-                    scriptCharset: 'utf-8',
-                    success: function (data) {
-                        render(data);
-
-                    },
-                    error: function () {
-                        alert("Server Error. Please try again later.");
-                    },
+                    var estimation_id = location.pathname.split("/")[2];
+                    $.ajax({
+                        type: 'get',
+                        url: apiEntry + estimation_id,
+                        dataType: 'json',
+                        scriptCharset: 'utf-8',
+                        success: function (data) {
+                            render(data);
+                        },
+                        error: function () {
+                            alert("Server Error. Please try again later.");
+                        },
+                    });
                 });
-            });
 
-            var regExp = new RegExp(",", "g")
+                var regExp = new RegExp(",", "g")
 
-            // add item
-            $(document).on('click', '.addItem', function() {
-                var tbody = $(this).parents('tbody');
-                addItem(tbody);
-            });
+                // add item
+                $(document).on('click', '.addItem', function () {
+                    var tbody = $(this).parents('tbody');
+                    addItem(tbody);
+                });
 
-            // add group 
-            $('#addGroup').click(addGroup);
+                // add group 
+                $('#addGroup').click(addGroup);
 
-            // remove group
-             $(document).on('click', '.remove_group', function() {
-
-                var tbody = $(this).parents('tbody');
-
-                tbody.find('.item_row').each(function(idx, tr){
-                    
-                    var item_id = $(tr).find('.item_id').val();
-                    var error = deleteItem(item_id);
-                    if (error) {
-                        return
+                // remove group
+                $(document).on('click', '.remove_group', function () {
+                    if (confirm("項目を削除します。")) {
+                        var tbody = $(this).parents('tbody');
+                        removeGroup(tbody);
                     }
                 });
-                var group_id = tbody.find('.group_id').val();
 
-                var error = deleteGroup(group_id);
-                if (error) {
-                    return
-                }
+                // print 
+                $('#print').click(function () {
 
-                tbody.remove();
-            });
+                    $('button').attr("disabled", true);
+                    $('select').attr("disabled", true);
 
-            // save
-            $('#save').click(function () {
+                    var estimation = bindEstimation();
+                    var url = apiEntry + estimation.id
+                    var successFunc = printData(estimation);
 
-                var button = $(this);
-                button.attr("disabled", true);
+                    postData(url, estimation, successFunc, button);
 
-                var estimation = bindEstimation();
-
-                $.ajax({
-                    type: 'post',
-                    url: apiEntry + estimation.id,
-                    data: JSON.stringify(estimation),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    scriptCharset: 'utf-8',
-                    success: function (data) {
-                        render(data);
-                    },
-                    error: function () {
-                        alert("Server Error. Please try again later.");
-                    },
-                    complete: function () {
-                        button.attr("disabled", false);
-                    }
+                    $('button').attr("disabled", false);
+                    $('select').attr("disabled", false);
                 });
-            });
 
-            // duplicate
-            $('#duplicate').click(function() {
+                // save
+                $('#save').click(function () {
 
-                var button = $(this);
-                button.attr("disabled", true);
+                    $('button').attr("disabled", true);
+                    $('select').attr("disabled", true);
 
-                var estimation = bindEstimation();
-                $.ajax({
-                    type: 'post',
-                    url: apiEntry + estimation.id + "/duplicate",
-                    data: JSON.stringify(estimation),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    scriptCharset: 'utf-8',
-                    success: function (data, textStatus) {
+                    var estimation = bindEstimation();
+                    var url = apiEntry + estimation.id
+                    var successFunc = function (data) { render() };
+
+                    postData(url, estimation, successFunc);
+
+                    $('button').attr("disabled", false);
+                    $('select').attr("disabled", false);
+                });
+
+                // duplicate
+                $('#duplicate').click(function () {
+
+                    $('button').attr("disabled", true);
+                    $('select').attr("disabled", true);
+
+                    var estimation = bindEstimation();
+                    var url = apiEntry + "duplicate/" + estimation.id;
+                    var successFunc = function (data) {
                         if (data.url) {
                             alert("duplicated")
                             window.location.href = data.url;
                         }
                         else {
-                            alert("else")
+                            alert("internal server error")
                         }
-                    },
-                    complete: function () {
-                        button.attr("disabled", false);
-                    }
-                }); 
-            });
-
-            // on change items
-            $(document).on('change', '.items', function() {
-                calcPrice($(this).parents('tr'));
-                total();
-            });
-
-            $(document).on('change', '.select_edit', function() {
-
-                var estimation_id = parseInt($('#estimation_id').val());
-
-                if ($(this).val() == "delete") {
-
-                    var tr = $(this).parents('tr');
-
-                    var item_id = tr.find('.item_id').val();
-
-                    var error = deleteItem(item_id)
-
-                    if (error) {
-                        return
                     }
 
-                    var tbody = $(this).parents('tbody')
+                    postData(url, estimation, successFunc);
 
-                    if (tbody.find('tr').length < 4) {
-
-                        var group_id = tbody.find('.group_id').val();
-                        error = deleteGroup(group_id);
-
-                        if (error) {
-                            return
-                        }
-
-                        tbody.remove();
-                    }
-                    tr.remove();
-                }
-
-                $(this).val("none");
-
-            });
-
-
-            function total() {
-                var subtotal = 0;
-
-                var table = $('table');
-                table.find('.price').each(function(idx, st) {
-                    price = parseInt($(st).html().replace(regExp, ""));
-                    subtotal += price;
+                    $('button').attr("disabled", false);
+                    $('select').attr("disabled", false);
                 });
 
-                var tax = subtotal / 10;
-                var total = subtotal + tax;
-
-                table.find('.subtotal').text(subtotal);
-                table.find('.tax').text(tax);
-                table.find('.total').text(total);
-
-            }
-
-            function addGroup() {
-                var html = groupHtmlHead + itemHtml + groupHtmlFoot;
-                $(".addGroupRow").before(html);
-
-                // sortable
-                $("table").sortable({
-                    items: ".group_tbody"
-                });
-
-                $(".group_tbody").sortable({
-                    items: ".item_row"
-                });
-            }
-
-            function addItem(tbody) {
-                tbody.find(".addItemRow").before(itemHtml);
-            }
-
-            function render(estimation) {
-
-                var estimation_id = estimation.id;
-                var client_name = estimation.client_name;
-                var estimation_name = estimation.estimation_name;
-                
-                $('#estimation_id').attr('value', estimation_id);
-                $('#client_name').attr('value', client_name);
-                $('#estimation_name').attr('value', estimation_name);
-
-                renderGroups(estimation.groups);
-
-                $(".item_row").each(function (idx, tr) {
-                    calcPrice($(tr));
+                // on change items calc prices
+                $(document).on('change', '.items', function () {
+                    calcPrice($(this).parents('tr'));
                     total();
-
-
-
                 });
 
-            }
+                // onchange select, execute some actions
+                $(document).on('change', '.select_edit', function () {
 
-            function renderGroups(groups) {
+                    // disable all button and select
+                    $('button').attr("disabled", true);
+                    $('select').attr("disabled", true);
 
-                for (let i = 0; i < groups.length; i++) {
-                    var group = groups[i];
+                    var estimation_id = parseInt($('#estimation_id').val());
 
-                    var grouprows = $('table').find('.group_tbody');
-                   
-                    if (grouprows.length < i + 1) {
-                        addGroup();
+                    // delete row after cofirm if the select is delete
+                    if ($(this).val() == "delete") {
+                        if (confirm("摘要を削除します。")) {
+                            var tr = $(this).parents('tr');
+                            removeItem(tr);
+                        }
                     }
 
-                    var tbody = $('table').find('.group_tbody').eq(i);
-                    tbody.find('.group_id').attr('value', group.id);
-                    tbody.find('.group_name').attr('value', group.name);
+                    // back the select to none
+                    $(this).val("none");
 
-                    renderItems(group.items, tbody);
+                    // enable all button and select
+                    $('button').attr("disabled", false);
+                    $('select').attr("disabled", false);
+                });
+
+                // culculate bottom of estimation
+                function total() {
+                    var subtotal = 0;
+                    var table = $('table');
+
+                    // calculate subtotal
+                    table.find('.price').each(function (idx, st) {
+                        price = parseInt($(st).html().replace(regExp, ""));
+                        subtotal += price;
+                    });
+
+                    // calculate tax, total
+                    var tax = subtotal / 10;
+                    var total = subtotal + tax;
+
+                    // render
+                    table.find('.subtotal').text(subtotal);
+                    table.find('.tax').text(tax);
+                    table.find('.total').text(total);
 
                 }
 
+                // from click #add_group
+                function addGroup() {
 
-            }
+                    // add doms
+                    var html = groupHtmlHead + itemHtml + groupHtmlFoot;
+                    $(".addGroupRow").before(html);
 
-            function renderItems(items, tbody) {
-
-                for (let i = 0; i < items.length; i++) {
-                    var item = items[i];
-
-                    var itemrows = tbody.find('.item_row');
-                    
-                    if (itemrows.length < i + 1) {
-                        addItem(tbody)
-                    }
-                    var tr = tbody.find('.item_row').eq(i);
-                    tr.find('.item_id').attr('value', item.id);
-                    tr.find('.item_name').attr('value', item.name);
-                    tr.find('.amount').attr('value', item.amount);
-                    tr.find('.unit').attr('value', item.unit);
-                    tr.find('.unit_price').attr('value', item.unit_price);
+                    // renew sortable
+                    $("table").sortable({
+                        items: ".group_tbody"
+                    });
+                    $(".group_tbody").sortable({
+                        items: ".item_row"
+                    });
                 }
 
-            }
+                // from click .add_item
+                function addItem(tbody) {
+                    tbody.find(".addItemRow").before(itemHtml);
+                }
 
-            function bindEstimation() {
+                // render from estimation obj 
+                function render(estimation) {
 
-                var table = $('table');
+                    var estimation_id = estimation.id;
+                    var client_name = estimation.client_name;
+                    var estimation_name = estimation.estimation_name;
 
-                var groups = [];
+                    // render estimation obj
+                    $('#estimation_id').attr('value', estimation_id);
+                    $('#client_name').attr('value', client_name);
+                    $('#estimation_name').attr('value', estimation_name);
 
-                table.find('.group_tbody').each(function(idx, tbody){
+                    // render group obj
+                    renderGroups(estimation.groups);
 
-                    var items = [];
+                    // recalculate each rows
+                    $(".item_row").each(function (idx, tr) {
+                        calcPrice($(tr));
+                        total();
+                    });
 
-                    $(tbody).find('.item_row').each(function(idx, tr){
-                        
-                        var item = bindItem(idx, tr)
-                        items.push(item);
+                }
+
+                // subfunction of render
+                function renderGroups(groups) {
+
+                    for (let i = 0; i < groups.length; i++) {
+
+                        // render each group
+                        var group = groups[i];
+
+                        // add group tbody when there is no where to render
+                        var grouprows = $('table').find('.group_tbody');
+                        if (grouprows.length < i + 1) {
+                            addGroup();
+                        }
+
+                        // render group obj
+                        var tbody = $('table').find('.group_tbody').eq(i);
+                        tbody.find('.group_id').attr('value', group.id);
+                        tbody.find('.group_name').attr('value', group.name);
+
+                        // render item obj
+                        renderItems(group.items, tbody);
+                    }
+                }
+
+                // subfuntion of render
+                function renderItems(items, tbody) {
+
+                    for (let i = 0; i < items.length; i++) {
+
+                        // render each items
+                        var item = items[i];
+
+                        // add item row when there is no row to render
+                        var itemrows = tbody.find('.item_row');
+                        if (itemrows.length < i + 1) {
+                            addItem(tbody)
+                        }
+
+                        // render item obj
+                        var tr = tbody.find('.item_row').eq(i);
+                        tr.find('.item_id').attr('value', item.id);
+                        tr.find('.item_name').attr('value', item.name);
+                        tr.find('.amount').attr('value', item.amount);
+                        tr.find('.unit').attr('value', item.unit);
+                        tr.find('.unit_price').attr('value', item.unit_price);
+                    }
+
+                }
+
+                // to post json obj
+                function bindEstimation() {
+
+                    var table = $('table');
+
+                    // bind groups
+                    var groups = [];
+                    table.find('.group_tbody').each(function (idx, tbody) {
+
+                        var group = bindGroup(idx, tbody)
+                        groups.push(group);
 
                     });
 
+                    // get value from inputs
+                    var estimation_id = parseInt($('#estimation_id').val());
+                    var client_name = $("#client_name").val();
+                    var estimation_name = $("#estimation_name").val();
+                    var subtotal = parseInt(table.find('.subtotal').text());
+                    var tax = parseInt(table.find('.tax').text());
+                    var total = parseInt(table.find('.total').text());
+
+                    // set value to obj
+                    var estimation = {
+                        id: estimation_id,
+                        client_name: client_name,
+                        estimation_name: estimation_name,
+                        groups: groups,
+                        sub_total: subtotal,
+                        tax: tax,
+                        total: total
+                    }
+
+                    return estimation
+                }
+
+                // subfunction of bindGroup
+                function bindItem(idx, tr) {
+
+                    // get value from inputs
+                    var item_id = parseInt($(tr).find('.item_id').val());
+                    var parent_group_id = parseInt($(tr).find('.parent_group_id').val());
+                    var item_name = $(tr).find('.item_name').val();
+                    var amount = parseInt($(tr).find('.amount').val());
+                    var unit = $(tr).find('.unit').val();
+                    var unit_price = parseInt($(tr).find('.unit_price').val());
+
+                    // set value to obj
+                    var item = {
+                        id: item_id,
+                        group_id: parent_group_id,
+                        name: item_name,
+                        amount: amount,
+                        unit: unit,
+                        unit_price: unit_price,
+                        price: unit_price * amount,
+                        order: idx + 1
+                    }
+
+                    return item
+                }
+
+                // subfunction of bindEstimation
+                function bindGroup(idx, tbody) {
+
+                    // bind items
+                    var items = [];
+                    $(tbody).find('.item_row').each(function (idx, tr) {
+                        var item = bindItem(idx, tr)
+                        items.push(item);
+                    });
+
+                    // get value from inputs
                     var group_id = parseInt($(tbody).find('.group_id').val());
                     var group_name = $(tbody).find('.group_name').val();
 
+                    // set value to obj
                     var group = {
                         id: group_id,
                         name: group_name,
@@ -411,90 +456,106 @@
                         order: idx + 1
                     }
 
-                    groups.push(group);
-
-                });
-
-                var estimation_id = parseInt($('#estimation_id').val());
-                var client_name = $("#client_name").val();
-                var estimation_name = $("#estimation_name").val();
-                var subtotal = parseInt(table.find('.subtotal').text());
-                var tax = parseInt(table.find('.tax').text());
-                var total = parseInt(table.find('.total').text());
-
-                var estimation = {
-
-                    id: estimation_id, 
-                    client_name: client_name, 
-                    estimation_name: estimation_name,
-                    groups: groups,
-                    sub_total: subtotal,
-                    tax: tax,
-                    total: total
+                    return group
                 }
 
-                return estimation
-            }
+                // calculate price of row
+                function calcPrice(tr) {
 
+                    // get value from inputs
+                    var amountStr = tr.find('.amount').val();
+                    var unitPriceStr = tr.find('.unit_price').val();
 
-            function bindItem(idx, tr) {
+                    // empty check
+                    if (amountStr !== undefined && amountStr != "" && unitPriceStr !== undefined && unitPriceStr != "") {
 
-                var item_id = parseInt($(tr).find('.item_id').val());
-                var parent_group_id = parseInt($(tr).find('.parent_group_id').val());
-                var item_name = $(tr).find('.item_name').val();
-                var amount = parseInt($(tr).find('.amount').val());
-                var unit = $(tr).find('.unit').val();
-                var unit_price = parseInt($(tr).find('.unit_price').val());
+                        // parse int
+                        var amount = parseInt(amountStr.replace(regExp, ""));
+                        var unit_price = parseInt(unitPriceStr.replace(regExp, ""));
 
-                var item = {
-                    id: item_id,
-                    group_id: parent_group_id,
-                    name: item_name,
-                    amount: amount,
-                    unit: unit,
-                    unit_price: unit_price,
-                    price: unit_price * amount,
-                    order: idx + 1
-                }
+                        // calculate price
+                        var price = amount * unit_price;
 
-                return item
-            }
-
-            function calcPrice(tr) {
-                
-                var amountStr = tr.find('.amount').val();
-                var unitPriceStr = tr.find('.unit_price').val();
-
-                if (amountStr !== undefined && amountStr != "" && unitPriceStr !== undefined && unitPriceStr != "") {
-
-                    var amount = parseInt(amountStr.replace(regExp, ""));
-                    var unit_price = parseInt(unitPriceStr.replace(regExp, ""));
-
-                    var price = amount * unit_price;
-
-                    if (isNaN(price)) {
-                        price = 0;
-                    }
-
-                    tr.find('.price').text(price.toLocaleString());
-
-                }
-
-            }
-
-            function deleteItem(item_id) {
-
-                    if (item_id != "0" && item_id != undefined) {
-
-                        var item = {
-                            id : parseInt(item_id)
+                        // recheck NaN
+                        if (isNaN(price)) {
+                            price = 0;
                         }
 
+                        // render price
+                        tr.find('.price').text(price.toLocaleString());
+                    }
+
+                }
+
+                // remove row dom
+                function removeItem(tr) {
+
+                    // get id from hidden input
+                    var item_id = tr.find('.item_id').val();
+
+                    // send delete item request if it has db id
+                    var error = deleteItem(item_id)
+
+                    // if some error, not continue
+                    if (error) {
+                        return
+                    }
+
+                    // check the item's group rows
+                    var tbody = $(this).parents('tbody')
+
+                    // if there is no item row, remove group
+                    if (tbody.find('tr').length < 4) {
+
+                        // send delete request group request if it has db id
+                        var group_id = tbody.find('.group_id').val();
+                        error = deleteGroup(group_id);
+                        
+                        // if some error, not continue
+                        if (error) {
+                            return
+                        }
+                        
+                        // remove the group from table
+                        tbody.remove();
+                    }
+
+                    // remove the item from table
+                    tr.remove();
+
+                }
+
+                // remove group dom
+                function removeGroup(tbody) {
+
+                    // before remove the group, delete all belonged items
+                    tbody.find('.item_row').each(function (idx, tr) {
+
+                        var item_id = $(tr).find('.item_id').val();
+                        var error = deleteItem(item_id);
+                        if (error) {
+                            return
+                        }
+                    });
+
+                    // send delete request
+                    var group_id = tbody.find('.group_id').val();
+                    var error = deleteGroup(group_id);
+                    if (error) {
+                        return
+                    }
+
+                    // remove the item from table
+                    tbody.remove();
+                }
+
+                // send delete request of the item if it has not id
+                function deleteItem(item_id) {
+
+                    if (item_id != "0" && item_id != undefined) {
                         $.ajax({
                             type: 'delete',
-                            url: apiEntry + estimation_id + "/item",
-                            data: JSON.stringify(item),
-                            contentType: 'application/json',
+                            url: apiEntry + "item/" + item_id,
                             dataType: 'text',
                             scriptCharset: 'utf-8',
                             success: function () {
@@ -507,36 +568,76 @@
                         });
                     }
                     return false;
-            }
+                }
 
-            function deleteGroup(group_id) {
+                // send delete request of the group if it has not id
+                function deleteGroup(group_id) {
 
-                if (group_id != "0" && group_id != undefined) {
-
-                    var group = {
-                        id: parseInt(group_id)
+                    if (group_id != "0" && group_id != undefined) {
+                        $.ajax({
+                            type: 'delete',
+                            url: apiEntry + "group/" + group_id,
+                            dataType: 'text',
+                            scriptCharset: 'utf-8',
+                            success: function () {
+                                alert("group deleted")
+                            },
+                            error: function () {
+                                alert("Server Error. Please try again later.");
+                                return true;
+                            },
+                        });
                     }
+                    return false;
+                }
+
+                // send post request
+                function postData(url, data, successFunc) {
 
                     $.ajax({
-                        type: 'delete',
-                        url: apiEntry + estimation_id + "/group",
-                        data: JSON.stringify(group),
+                        type: 'post',
+                        url: url,
+                        data: JSON.stringify(data),
                         contentType: 'application/json',
-                        dataType: 'text',
+                        dataType: 'json',
                         scriptCharset: 'utf-8',
-                        success: function () {
-                            alert("group deleted")
+                        success: successFunc,
+                        error: function () {
+                            alert("Server Error. Please try again later.");
+                        }
+                    });
+                }
+
+                // success function of print button
+                function printData(estimation) {
+
+                    // render before request.
+                    // *because we save estimation before action.
+                    render(estimation);
+                    
+                    $.ajax({
+                        type: 'get',
+                        url: apiEntry + "print/" + estimation.id,
+                        dataType: 'json',
+                        scriptCharset: 'utf-8',
+                        success: function (data) {
+                            if (data.url) {
+                                window.location.href = data.url;
+                                var alink = document.createElement('a');
+                                alink.href = url;
+                                alink.click();
+                            }
+                            else {
+                                alert("internal server error")
+                            }
                         },
                         error: function () {
                             alert("Server Error. Please try again later.");
-                            return true;
-                        },
+                        }
                     });
                 }
-                return false;
-            }
 
-        });
+            });
     </script>
 </body>
 

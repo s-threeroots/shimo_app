@@ -10,6 +10,7 @@
             "cwd": "${fileDirname}/..",
             "env": {
                 "DATABASE_URL": "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable",
+                "ENV": "LOCAL",
                 "PORT": "8081",
             },
             "args": []
