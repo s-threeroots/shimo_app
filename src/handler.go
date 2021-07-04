@@ -66,7 +66,7 @@ func Print(c echo.Context) error {
 		return err
 	}
 
-	filePath, err := ExportEstimation(est)
+	filePath, err := GetTemplate(est).Export(est)
 	if err != nil {
 		return err
 	}

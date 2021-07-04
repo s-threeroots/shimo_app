@@ -9,6 +9,7 @@ type Estimation struct {
 	ID             uint    `json:"id"`
 	ClientName     string  `json:"client_name"`
 	EstimationName string  `json:"estimation_name"`
+	TemplateID     uint    `json:"template_id"`
 	Groups         []Group `json:"groups"`
 	SubTotal       int     `json:"sub_total"`
 	Tax            int     `json:"tax"`
@@ -38,23 +39,61 @@ type Item struct {
 
 func (e Estimation) Init() {
 
+	g := Group{}
+	g.Init()
+
 	e = Estimation{
 		ClientName:     "",
 		EstimationName: "",
 		Groups: []Group{
-			{
-				Name: "",
-				Items: []Item{
-					{
-						Name:      "",
-						Amount:    0,
-						Unit:      "",
-						UnitPrice: 0,
-						Price:     0,
-					},
-				},
-			},
+			g,
 		},
+	}
+}
+
+func (g Group) Init() {
+
+	i := Item{}
+	i.Init()
+
+	g = Group{
+		Name: "",
+		Items: []Item{
+			i,
+		},
+	}
+}
+
+func (e *Estimation) SeparateGroup(gidx int, iidx int) {
+
+	nName := e.Groups[gidx].Name
+	items := e.Groups[gidx].Items[iidx:]
+	nItems := make([]Item, len(items))
+	copy(nItems, items)
+
+	ng := Group{
+		Name:  nName,
+		Items: nItems,
+	}
+	e.Groups[gidx].Items = e.Groups[gidx].Items[:iidx]
+	nGroups := []Group{}
+	befG := e.Groups[:gidx+1]
+	afG := e.Groups[gidx+1:]
+
+	nGroups = append(nGroups, befG...)
+	nGroups = append(nGroups, ng)
+	nGroups = append(nGroups, afG...)
+
+	e.Groups = nGroups
+}
+
+func (i Item) Init() {
+	i = Item{
+		Name:      "",
+		Amount:    0,
+		Unit:      "",
+		UnitPrice: 0,
+		Price:     0,
 	}
 }
 

@@ -29,9 +29,9 @@
             <div class="col-md-3"></div>
             <div class="col-md-4 form-inline">
                 <label for="invoice_name">テンプレート:</label>
-                <select class="form-control">
-                    <option>テンプレート1</option>
-                    <option>テンプレート2</option>
+                <select class="form-control" id="template_id">
+                    <option value="1">テンプレート1</option>
+                    <option value="2">テンプレート2</option>
                 </select>
             </div>
         </div>
@@ -96,10 +96,10 @@
                 var itemHtml = `
                     <tr class="item_row">
                         <input class="item_id" type="hidden" value="0">
-                        <td><input class="form-control items item_name"      type="text" placeholder="摘要"></td>
-                        <td><input class="form-control items amount"         type="text" placeholder="数量"></td>
-                        <td><input class="form-control items unit"           type="text" placeholder="単位"></td>
-                        <td><input class="form-control items unit_price"     type="text" placeholder="金額"></td>
+                        <td><input class="form-control items item_name"      type="text"   placeholder="摘要"></td>
+                        <td><input class="form-control items amount"         type="number" placeholder="数量"></td>
+                        <td><input class="form-control items unit"           type="text"   placeholder="単位"></td>
+                        <td><input class="form-control items unit_price"     type="number" placeholder="金額"></td>
                         <td class="price">0</td>
                         <td>
                             <select class="form-select select_edit" name="edit">
@@ -180,10 +180,7 @@
                     var url = apiEntry + estimation.id
                     var successFunc = printData(estimation);
 
-                    postData(url, estimation, successFunc, button);
-
-                    $('button').attr("disabled", false);
-                    $('select').attr("disabled", false);
+                    postData(url, estimation, successFunc);
                 });
 
                 // save
@@ -194,7 +191,7 @@
 
                     var estimation = bindEstimation();
                     var url = apiEntry + estimation.id
-                    var successFunc = function (data) { render() };
+                    var successFunc = function (data) { render(data) };
 
                     postData(url, estimation, successFunc);
 
@@ -304,11 +301,13 @@
                 function render(estimation) {
 
                     var estimation_id = estimation.id;
+                    var template_id = estimation.template_id;
                     var client_name = estimation.client_name;
                     var estimation_name = estimation.estimation_name;
 
                     // render estimation obj
                     $('#estimation_id').attr('value', estimation_id);
+                    $("#template_id").val(template_id);
                     $('#client_name').attr('value', client_name);
                     $('#estimation_name').attr('value', estimation_name);
 
@@ -388,6 +387,7 @@
 
                     // get value from inputs
                     var estimation_id = parseInt($('#estimation_id').val());
+                    var template_id = parseInt($("#template_id").val());
                     var client_name = $("#client_name").val();
                     var estimation_name = $("#estimation_name").val();
                     var subtotal = parseInt(table.find('.subtotal').text());
@@ -397,6 +397,7 @@
                     // set value to obj
                     var estimation = {
                         id: estimation_id,
+                        template_id: template_id,
                         client_name: client_name,
                         estimation_name: estimation_name,
                         groups: groups,
@@ -470,8 +471,8 @@
                     if (amountStr !== undefined && amountStr != "" && unitPriceStr !== undefined && unitPriceStr != "") {
 
                         // parse int
-                        var amount = parseInt(amountStr.replace(regExp, ""));
-                        var unit_price = parseInt(unitPriceStr.replace(regExp, ""));
+                        var amount = parseInt(amountStr);
+                        var unit_price = parseInt(unitPriceStr);
 
                         // calculate price
                         var price = amount * unit_price;
@@ -604,7 +605,7 @@
                         success: successFunc,
                         error: function () {
                             alert("Server Error. Please try again later.");
-                        }
+                        },
                     });
                 }
 
@@ -633,6 +634,10 @@
                         },
                         error: function () {
                             alert("Server Error. Please try again later.");
+                        },
+                        complete: function() {
+                            $('button').attr("disabled", false);
+                            $('select').attr("disabled", false);
                         }
                     });
                 }

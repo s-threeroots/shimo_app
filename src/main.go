@@ -41,7 +41,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.Static("/files", "files")
+	e.Static("/outfiles", "outfiles")
 	e.GET("/estimation/new", CreatePage)
 	e.GET("/estimation/:id/edit", EditPage)
 	e.GET("/api/estimation/:id", GetEstimation)

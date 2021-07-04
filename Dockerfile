@@ -27,6 +27,8 @@ COPY --from=builder /go/src/shimoapp ./shimoapp
 COPY ./files/* ./files/
 COPY ./views/* ./views/
 
+RUN if [ ! -d ./outfiles ]; then mkdir ./outfiles; fi
+
 EXPOSE 8080
 
 ENTRYPOINT ["./shimoapp"]
